@@ -1,15 +1,18 @@
 // Dungeon Cards — entrypoint.
 // Run with: node main.ts
-// Copies the playable game (index.html, css/, js/) into out/.
+// Copies the playable game (index.html, css/, js/) into the output directory.
+// The output directory is $MAKEFUN_OUTPUT_DIR when set (the grader provides a
+// writable /output), otherwise ./out next to this file.
 // Deterministic: the same input files always produce the same bytes.
+// Plain JavaScript (no TypeScript annotations) so it runs on any Node.
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root: string = fileURLToPath(new URL(".", import.meta.url));
-const outDir: string = process.env.MAKEFUN_OUTPUT_DIR || join(root, "out");
+const root = fileURLToPath(new URL(".", import.meta.url));
+const outDir = process.env.MAKEFUN_OUTPUT_DIR || join(root, "out");
 
-function totalBytes(dir: string): number {
+function totalBytes(dir) {
   let total = 0;
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
@@ -19,7 +22,7 @@ function totalBytes(dir: string): number {
   return total;
 }
 
-function countFiles(dir: string): number {
+function countFiles(dir) {
   let n = 0;
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
@@ -28,8 +31,12 @@ function countFiles(dir: string): number {
   return n;
 }
 
-rmSync(outDir, { recursive: true, force: true });
+// Empty the output directory WITHOUT removing the directory itself:
+// the grader mounts /output as a volume, and removing a mountpoint fails.
 mkdirSync(outDir, { recursive: true });
+for (const name of readdirSync(outDir)) {
+  rmSync(join(outDir, name), { recursive: true, force: true });
+}
 cpSync(join(root, "index.html"), join(outDir, "index.html"));
 cpSync(join(root, "css"), join(outDir, "css"), { recursive: true });
 cpSync(join(root, "js"), join(outDir, "js"), { recursive: true });
