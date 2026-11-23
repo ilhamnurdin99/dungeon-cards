@@ -47,6 +47,7 @@ DC.game = {
       weak: 0,
       log: [],
       draftChoices: [],
+      shop: null,
       turn: 1,
       over: false,
       won: false
@@ -173,6 +174,7 @@ DC.game = {
     s.score += total;
     DC.audio.play("hit");
     this.log("You deal " + total + " damage.");
+    if (DC.ui && DC.ui.floatDamage) DC.ui.floatDamage("monster", "-" + total, "dmg");
   },
 
   endTurn: function () {
@@ -206,6 +208,7 @@ DC.game = {
     s.block -= absorbed;
     s.hp = Math.max(0, s.hp - through);
     DC.audio.play("hurt");
+    if (through > 0 && DC.ui && DC.ui.floatDamage) DC.ui.floatDamage("player", "-" + through, "hurt");
     this.log(s.monster.def.name + " attacks for " + dmg +
       (absorbed > 0 ? " (" + absorbed + " blocked)" : "") + ".");
     if (intent.poison) {
@@ -252,6 +255,56 @@ DC.game = {
     s.hp += healed;
     DC.audio.play("draft");
     this.log("You add " + card.name + " to your deck and rest (+ " + healed + " HP).");
+    // The trader waits between levels: spend gold, then go deeper.
+    s.shop = { heal: false, card: false, remove: false, removing: false };
+    s.screen = "shop";
+    DC.ui.renderAll();
+  },
+
+  shopBuy: function (kind) {
+    var s = this.state;
+    if (!s || s.screen !== "shop" || !s.shop) return;
+    if (kind === "heal") {
+      if (s.shop.heal || s.gold < 20 || s.hp >= s.maxHp) return;
+      s.gold -= 20; s.shop.heal = true;
+      var healed = Math.min(15, s.maxHp - s.hp);
+      s.hp += healed;
+      DC.audio.play("heal");
+      this.log("Trader's tonic: restore " + healed + " HP (-20 gold).");
+    } else if (kind === "card") {
+      if (s.shop.card || s.gold < 30) return;
+      s.gold -= 30; s.shop.card = true;
+      var pool = DC.CARDS.slice();
+      this.shuffle(pool);
+      var bought = pool[0];
+      s.deck.push(bought.id);
+      DC.audio.play("coin");
+      this.log("You buy " + bought.name + " from the trader (-30 gold).");
+    } else if (kind === "remove") {
+      if (s.shop.remove || s.gold < 25 || s.deck.length <= 1) return;
+      s.shop.removing = !s.shop.removing;
+    }
+    DC.ui.renderAll();
+  },
+
+  shopRemoveCard: function (cardId) {
+    var s = this.state;
+    if (!s || s.screen !== "shop" || !s.shop || !s.shop.removing) return;
+    var idx = s.deck.indexOf(cardId);
+    if (idx < 0) return;
+    s.deck.splice(idx, 1);
+    s.gold -= 25;
+    s.shop.remove = true;
+    s.shop.removing = false;
+    DC.audio.play("coin");
+    this.log("The trader takes your " + DC.cardById(cardId).name + " away (-25 gold).");
+    DC.ui.renderAll();
+  },
+
+  shopDone: function () {
+    var s = this.state;
+    if (!s || s.screen !== "shop") return;
+    s.shop = null;
     s.screen = "fight";
     this.startLevel(s.level + 1);
     this.log("Level " + s.level + ": " + s.monster.def.name + " blocks the way!");

@@ -2,17 +2,18 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { min-height: 100%; }
 body {
-  background: #14101d radial-gradient(ellipse at 50% 0%, #2b2140 0%, #14101d 60%);
+  background: #0d0a14;
   color: #f0e9d8;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 16px;
 }
-#app { max-width: 1020px; margin: 0 auto; padding: 12px 16px 24px; min-height: 100vh; }
+#bg-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; }
+#app { max-width: 1020px; margin: 0 auto; padding: 10px 16px 12px; min-height: 100vh; position: relative; z-index: 1; }
 
 /* ---------- HUD ---------- */
 #hud {
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding: 10px 14px; margin-bottom: 14px;
+  padding: 8px 14px; margin-bottom: 10px;
   background: #241b33; border: 1px solid #4a3a68; border-radius: 10px;
 }
 .hud-title { font-size: 20px; font-weight: bold; color: #ffd97a; letter-spacing: 1px; }
@@ -43,32 +44,35 @@ body {
 .end-turn { display: block; margin: 6px auto 0; }
 
 /* ---------- Board ---------- */
+#board { position: relative; }
 .hidden { display: none !important; }
 .monster-box, .player-box {
-  background: #1e1729; border: 1px solid #4a3a68; border-radius: 12px;
-  padding: 14px 18px; margin-bottom: 12px; text-align: center;
+  background: rgba(30, 23, 41, 0.94); border: 1px solid #4a3a68; border-radius: 12px;
+  padding: 10px 18px 12px; margin-bottom: 8px; text-align: center;
+  position: relative;
 }
-.monster-icon { font-size: 64px; line-height: 1.1; }
-.monster-name { font-size: 26px; font-weight: bold; color: #ffb3b3; margin: 4px 0; }
+.monster-art { display: block; margin: 0 auto 4px; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.6)); }
+.player-art { vertical-align: middle; border-radius: 50%; }
+.monster-name { font-size: 24px; font-weight: bold; color: #ffb3b3; margin: 2px 0; }
 .boss-tag {
   background: #7a1010; color: #ffd97a; font-size: 13px; padding: 2px 8px;
   border-radius: 5px; vertical-align: middle; letter-spacing: 1px;
 }
-.monster-desc { font-size: 14px; color: #b9aed0; font-style: italic; margin-bottom: 10px; }
-.monster-meta { margin-top: 8px; font-size: 14px; color: #d8cde8; display: flex; gap: 16px; justify-content: center; }
+.monster-desc { font-size: 14px; color: #b9aed0; font-style: italic; margin-bottom: 6px; }
+.monster-meta { margin-top: 6px; font-size: 14px; color: #d8cde8; display: flex; gap: 16px; justify-content: center; }
 .poison { color: #8dff6e; font-weight: bold; }
 .intent {
-  margin-top: 10px; display: inline-block; background: #3a1420; color: #ffb3b3;
-  border: 1px solid #7a3040; border-radius: 6px; padding: 5px 12px; font-size: 15px;
+  margin-top: 6px; display: inline-block; background: #3a1420; color: #ffb3b3;
+  border: 1px solid #7a3040; border-radius: 6px; padding: 4px 10px; font-size: 15px;
 }
-.player-line { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap; }
+.player-line { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 6px; flex-wrap: wrap; }
 .player-icon { font-size: 30px; }
 .player-name { font-size: 20px; font-weight: bold; color: #9fd8ff; }
 .player-stats { font-size: 15px; color: #d8cde8; }
 
 /* HP bars */
 .bar {
-  position: relative; height: 24px; border-radius: 12px; overflow: hidden;
+  position: relative; height: 22px; border-radius: 12px; overflow: hidden;
   background: #0d0a14; border: 1px solid #4a3a68; max-width: 640px; margin: 0 auto;
 }
 .bar .fill { height: 100%; transition: width 0.25s ease; }
@@ -81,19 +85,27 @@ body {
 
 /* ---------- Hand / cards ---------- */
 .hand {
-  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
-  min-height: 168px; padding: 10px 4px;
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  min-height: 150px; padding: 6px 4px;
 }
 .hand-empty { color: #b9aed0; font-style: italic; align-self: center; }
 .card {
-  position: relative; width: 148px; min-height: 164px;
+  position: relative; width: 148px; min-height: 152px;
   background: linear-gradient(#3b2d5e, #241b33);
   border: 2px solid #6b558f; border-radius: 10px;
   padding: 10px 10px 8px; cursor: pointer; text-align: center;
-  transition: transform 0.12s ease, border-color 0.12s ease;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
-.card:hover { transform: translateY(-8px); border-color: #ffd97a; }
+.card:hover { transform: translateY(-8px); border-color: #ffd97a; box-shadow: 0 8px 22px rgba(0,0,0,0.55), 0 0 14px rgba(255,217,122,0.35); }
+.card.tone-attack { background: linear-gradient(#5a2318, #2a1210); border-color: #c65a2a; }
+.card.tone-attack:hover { border-color: #ffb347; }
+.card.tone-block { background: linear-gradient(#16283f, #101a2a); border-color: #2f7fc2; }
+.card.tone-block:hover { border-color: #9fd8ff; }
+.card.tone-heal { background: linear-gradient(#14301c, #0e2012); border-color: #3fae5a; }
+.card.tone-heal:hover { border-color: #8dff6e; }
+.card.tone-arcane { background: linear-gradient(#2a1740, #180e28); border-color: #8a5ac2; }
+.card.tone-arcane:hover { border-color: #d0a6ff; }
 .card.type-attack { border-color: #a13a3a; }
 .card.type-attack:hover { border-color: #ff9a9a; }
 .card.type-skill { border-color: #3a6ea1; }
@@ -112,23 +124,23 @@ body {
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; color: #d8cde8; padding: 0 4px;
 }
-.card-icon { font-size: 36px; line-height: 1.1; margin-top: 6px; }
+.card-art { width: 120px; height: 56px; border-radius: 6px; margin-top: 6px; border: 1px solid rgba(255,255,255,0.18); }
 .card-name { font-size: 16px; font-weight: bold; color: #ffd97a; }
 .card-text { font-size: 13.5px; color: #e6ddf2; line-height: 1.35; }
 
 /* ---------- Log ---------- */
-#controls { text-align: center; margin: 4px 0 10px; }
+#controls { text-align: center; margin: 2px 0 6px; }
 .log {
   background: #171224; border: 1px solid #3a2d55; border-radius: 8px;
-  padding: 8px 12px; font-size: 14px; color: #c9bddb; min-height: 96px;
-  max-width: 640px; margin: 0 auto; line-height: 1.5;
+  padding: 6px 12px; font-size: 13px; color: #c9bddb; min-height: 52px;
+  max-width: 640px; margin: 0 auto; line-height: 1.45;
 }
 .log div:first-child { color: #ffd97a; }
 
 /* ---------- Overlays ---------- */
 .overlay {
   display: none; position: fixed; inset: 0; z-index: 10;
-  background: rgba(10, 6, 18, 0.88);
+  background: rgba(10, 6, 18, 0.55);
   align-items: center; justify-content: center; padding: 20px;
 }
 .overlay.show { display: flex; }
@@ -140,7 +152,62 @@ body {
 .panel h1 { font-size: 44px; color: #ffd97a; letter-spacing: 2px; margin: 6px 0; }
 .panel h2 { font-size: 30px; color: #ffd97a; margin-bottom: 10px; }
 .panel p { margin: 10px 0; line-height: 1.5; color: #e6ddf2; }
+.title-art, .end-art { width: 100%; border-radius: 10px; border: 1px solid #4a3a68; margin-bottom: 6px; }
+.feature-bullets { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 12px 0 4px; }
+.feature-bullets span {
+  background: #171224; border: 1px solid #4a3a68; border-radius: 20px;
+  padding: 5px 12px; font-size: 13.5px; color: #e6ddf2;
+}
 .title-icon { font-size: 72px; }
+
+/* ---------- Level map ---------- */
+.level-map {
+  display: flex; align-items: center; justify-content: center; gap: 0;
+  margin: 2px 0 8px; padding: 6px 10px;
+  background: rgba(23, 18, 36, 0.9); border: 1px solid #3a2d55; border-radius: 10px;
+}
+.map-node { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 96px; }
+.map-num {
+  width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: bold; border: 2px solid #6b558f; background: #241b33; color: #b9aed0;
+}
+.map-node.done .map-num { background: #22753a; border-color: #8dff6e; color: #fff; }
+.map-node.current .map-num {
+  background: #c98f1e; border-color: #ffd97a; color: #241503;
+  box-shadow: 0 0 12px rgba(255, 217, 122, 0.7);
+}
+.map-name { font-size: 11.5px; color: #b9aed0; text-align: center; line-height: 1.2; }
+.map-node.current .map-name { color: #ffd97a; font-weight: bold; }
+.map-link { flex: 1; height: 2px; background: #4a3a68; min-width: 14px; margin: 0 2px 18px; }
+
+/* ---------- Shop ---------- */
+.shop-gold { font-size: 18px; color: #ffd97a; }
+.shop-offers { display: flex; gap: 12px; justify-content: center; margin: 14px 0; flex-wrap: wrap; }
+.shop-offer {
+  width: 160px; background: linear-gradient(#3b2d1e, #241a10); border: 2px solid #8a6410;
+  border-radius: 10px; padding: 14px 10px; cursor: pointer; color: #f0e9d8; font-family: inherit;
+  display: flex; flex-direction: column; gap: 6px; font-size: 14px; text-align: center;
+}
+.shop-offer:hover:not(:disabled) { border-color: #ffd97a; transform: translateY(-3px); }
+.shop-offer:disabled { opacity: 0.45; cursor: not-allowed; }
+.shop-offer.active { border-color: #ffd97a; box-shadow: 0 0 14px rgba(255,217,122,0.5); }
+.shop-offer .price { color: #ffd97a; font-weight: bold; }
+.shop-remove { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0 16px; align-items: center; }
+.shop-remove p { width: 100%; margin: 0; }
+.remove-pick { margin: 2px; }
+
+/* ---------- Floating damage ---------- */
+.float-dmg {
+  position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
+  font-size: 30px; font-weight: bold; color: #ff6b6b; text-shadow: 0 2px 4px #000;
+  pointer-events: none; z-index: 5; animation: floatUp 0.9s ease-out forwards;
+}
+.float-dmg.hurt { color: #ff9a9a; }
+@keyframes floatUp {
+  0% { opacity: 0; transform: translate(-50%, 6px); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -46px); }
+}
 .tagline { font-style: italic; color: #b9aed0; }
 .title-panel .big-btn { margin: 14px 0 10px; display: inline-block; }
 .best-line { color: #b9aed0; font-size: 14px; margin-top: 14px; }

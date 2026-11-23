@@ -7,6 +7,7 @@ DC.ui = {
 
   init: function () {
     var self = this;
+    DC.art.initBackground();
     this.el("play-btn").addEventListener("click", function () {
       DC.audio.ensure(); DC.audio.play("draft"); DC.game.newGame();
     });
@@ -21,6 +22,7 @@ DC.ui = {
     });
     this.el("resume-btn").addEventListener("click", function () { self.togglePause(); });
     this.el("restart-btn").addEventListener("click", function () { DC.game.newGame(); });
+    this.el("shop-done-btn").addEventListener("click", function () { DC.game.shopDone(); });
     this.el("again-btn").addEventListener("click", function () { DC.game.newGame(); });
     this.el("menu-btn").addEventListener("click", function () {
       DC.game.state = null; self.renderAll();
@@ -47,7 +49,7 @@ DC.ui = {
 
   togglePause: function () {
     var s = DC.game.state;
-    if (!s || (s.screen !== "fight" && s.screen !== "draft") || s.over) return;
+    if (!s || (s.screen !== "fight" && s.screen !== "draft" && s.screen !== "shop") || s.over) return;
     this.el("pause-screen").classList.toggle("show");
   },
 
@@ -58,13 +60,29 @@ DC.ui = {
   },
 
   cardHtml: function (card, index, playable) {
-    var cls = "card type-" + card.type + (playable ? "" : " unplayable");
+    var tone = DC.art.toneOf(card);
+    var cls = "card type-" + card.type + " tone-" + tone + (playable ? "" : " unplayable");
     var key = (typeof index === "number") ? '<span class="key">' + (index + 1) + "</span>" : "";
     return '<div class="' + cls + '" data-card="' + card.id + '">' + key +
       '<span class="cost">' + card.cost + "</span>" +
-      '<span class="card-icon">' + card.icon + "</span>" +
+      '<canvas class="card-art" width="120" height="56" data-art="' + card.id + '"></canvas>' +
       '<span class="card-name">' + card.name + "</span>" +
       '<span class="card-text">' + card.text + "</span></div>";
+  },
+
+  paintCardArts: function (root) {
+    var list = (root || document).querySelectorAll("canvas.card-art");
+    for (var i = 0; i < list.length; i++) {
+      var cv = list[i];
+      DC.art.drawCardArt(cv, DC.cardById(cv.getAttribute("data-art")));
+    }
+  },
+
+  floatDamage: function (who, text, kind) {
+    // Append to #board (not monster/player box): renderFight rebuilds those
+    // boxes' innerHTML every render, which would wipe the floating number.
+    var box = this.el("board");
+    if (box) DC.art.floatText(box, text, kind);
   },
 
   renderAll: function () {
@@ -72,15 +90,18 @@ DC.ui = {
     var hasGame = !!s;
     this.el("title-screen").classList.toggle("show", !hasGame);
     this.el("draft-screen").classList.toggle("show", hasGame && s.screen === "draft");
+    this.el("shop-screen").classList.toggle("show", hasGame && s.screen === "shop");
     this.el("end-screen").classList.toggle("show", hasGame && (s.screen === "win" || s.screen === "lose"));
     this.el("board").classList.toggle("hidden", !hasGame || s.screen === "win" || s.screen === "lose");
     if (!hasGame) {
       this.el("best-line").textContent = "Best score: " + DC.game.bestScore();
+      DC.art.drawTitle(this.el("title-art"));
       return;
     }
     this.renderHud(s);
-    if (s.screen === "fight" || s.screen === "draft") this.renderFight(s);
+    if (s.screen === "fight" || s.screen === "draft" || s.screen === "shop") this.renderFight(s);
     if (s.screen === "draft") this.renderDraft(s);
+    if (s.screen === "shop") this.renderShop(s);
     if (s.screen === "win" || s.screen === "lose") this.renderEnd(s);
   },
 
@@ -95,6 +116,17 @@ DC.ui = {
 
   renderFight: function (s) {
     var m = s.monster;
+    // Level-progress map: 5 dungeon rooms, current one highlighted.
+    var mapHtml = "";
+    for (var lv = 1; lv <= 5; lv++) {
+      var cls = lv < s.level ? "done" : (lv === s.level ? "current" : "todo");
+      var mark = lv < s.level ? "✓" : String(lv);
+      mapHtml += '<div class="map-node ' + cls + '" title="' + DC.monsterForLevel(lv).name + '">' +
+        '<span class="map-num">' + mark + '</span><span class="map-name">' +
+        DC.monsterForLevel(lv).name + "</span></div>";
+      if (lv < 5) mapHtml += '<div class="map-link"></div>';
+    }
+    this.el("level-map").innerHTML = mapHtml;
     var intent = DC.game.monsterIntent();
     var intentHtml = "";
     if (intent) {
@@ -103,7 +135,7 @@ DC.ui = {
         (intent.heal ? " + heals " + intent.heal : "") + "</div>";
     }
     this.el("monster-box").innerHTML =
-      '<div class="monster-icon">' + m.def.icon + "</div>" +
+      '<canvas id="monster-art" class="monster-art" width="170" height="155"></canvas>' +
       '<div class="monster-name">' + m.def.name + (m.def.boss ? ' <span class="boss-tag">BOSS</span>' : "") + "</div>" +
       '<div class="monster-desc">' + m.def.desc + "</div>" +
       this.bar(m.hp, m.maxHp, "hp-monster") +
@@ -111,9 +143,10 @@ DC.ui = {
         (m.def.armor ? "<span>Thick hide: -" + m.def.armor + " per hit</span>" : "") +
         (m.poison > 0 ? "<span class='poison'>\u2620\uFE0F Poison " + m.poison + "</span>" : "") +
       "</div>" + intentHtml;
+    DC.art.drawMonster(this.el("monster-art"), m.def);
 
     this.el("player-box").innerHTML =
-      '<div class="player-line"><span class="player-icon">\u{1F9DD}</span>' +
+      '<div class="player-line"><canvas id="player-art" class="player-art" width="54" height="54"></canvas>' +
       '<span class="player-name">Delver</span>' +
       '<span class="player-stats">\u26A1\uFE0F Energy ' + s.energy + " / " + s.maxEnergy +
       (s.block > 0 ? ' &nbsp;\u{1F6E1}\uFE0F Block ' + s.block : "") +
@@ -121,6 +154,7 @@ DC.ui = {
       (s.playerPoison > 0 ? ' &nbsp;<span class="poison">\u2620\uFE0F Poisoned</span>' : "") +
       "</span></div>" +
       this.bar(s.hp, s.maxHp, "hp-player");
+    DC.art.drawPlayer(this.el("player-art"));
 
     var hand = this.el("hand");
     hand.innerHTML = "";
@@ -133,6 +167,7 @@ DC.ui = {
       node.addEventListener("click", function () { DC.game.playCard(i); });
       hand.appendChild(node);
     });
+    this.paintCardArts(hand);
     if (s.hand.length === 0) {
       hand.innerHTML = '<div class="hand-empty">No cards in hand — end your turn to draw again.</div>';
     }
@@ -158,10 +193,56 @@ DC.ui = {
     });
     this.el("draft-note").textContent =
       "Level " + s.level + " cleared! Choose one card to add to your deck. You also rest and recover 10 HP.";
+    this.paintCardArts(box);
+  },
+
+  renderShop: function (s) {
+    var shop = s.shop || { heal: false, card: false, remove: false, removing: false };
+    this.el("shop-gold").innerHTML = "Your gold: <b>\u{1FA99} " + s.gold + "</b>";
+    var offers = [
+      { kind: "heal", name: "Trader's Tonic", price: 20, desc: "Restore 15 HP.",
+        disabled: shop.heal || s.gold < 20 || s.hp >= s.maxHp, bought: shop.heal },
+      { kind: "card", name: "Mystery Card", price: 30, desc: "A random card joins your deck.",
+        disabled: shop.card || s.gold < 30, bought: shop.card },
+      { kind: "remove", name: "Slim the Deck", price: 25, desc: "Remove a card from your deck.",
+        disabled: shop.remove || s.gold < 25 || s.deck.length <= 1, bought: shop.remove,
+        active: shop.removing }
+    ];
+    var box = this.el("shop-offers");
+    box.innerHTML = "";
+    offers.forEach(function (o) {
+      var b = document.createElement("button");
+      b.className = "shop-offer" + (o.active ? " active" : "");
+      b.disabled = !!o.disabled;
+      b.innerHTML = "<b>" + o.name + "</b><span>" + o.desc + "</span>" +
+        "<span class='price'>\u{1FA99} " + o.price + (o.bought ? " · SOLD" : "") + "</span>";
+      b.addEventListener("click", function () { DC.game.shopBuy(o.kind); });
+      box.appendChild(b);
+    });
+    var rm = this.el("shop-remove");
+    rm.innerHTML = "";
+    if (shop.removing) {
+      var label = document.createElement("p");
+      label.textContent = "Choose a card to remove:";
+      rm.appendChild(label);
+      var counts = {};
+      s.deck.forEach(function (id) { counts[id] = (counts[id] || 0) + 1; });
+      Object.keys(counts).forEach(function (id) {
+        var card = DC.cardById(id);
+        var b = document.createElement("button");
+        b.className = "small-btn remove-pick";
+        b.textContent = card.name + (counts[id] > 1 ? " ×" + counts[id] : "");
+        b.addEventListener("click", function () { DC.game.shopRemoveCard(id); });
+        rm.appendChild(b);
+      });
+    }
   },
 
   renderEnd: function (s) {
     var win = s.screen === "win";
+    var art = this.el("end-art");
+    if (win) { art.style.display = "block"; DC.art.drawTreasure(art); }
+    else { art.style.display = "none"; }
     this.el("end-title").textContent = win ? "\u{1F3C6} VICTORY!" : "\u{1F480} GAME OVER";
     this.el("end-title").className = win ? "end-title win" : "end-title lose";
     this.el("end-text").textContent = win

@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<canvas id="bg-canvas"></canvas>
 <div id="app">
   <header id="hud">
     <span class="hud-title">&#127984; Dungeon Cards</span>
@@ -23,9 +24,12 @@
   <!-- Title screen -->
   <section id="title-screen" class="overlay show">
     <div class="panel title-panel">
-      <div class="title-icon">&#127984;</div>
+      <canvas id="title-art" class="title-art" width="560" height="200"></canvas>
       <h1>Dungeon Cards</h1>
       <p class="tagline">Delve 5 dungeon levels. Build your deck. Beat the Lich King.</p>
+      <div class="feature-bullets">
+        <span>🃏 18 unique cards</span><span>🏰 5 dungeon levels</span><span>👑 Boss: the Lich King</span><span>🪙 Gold shop between levels</span>
+      </div>
       <button id="play-btn" class="big-btn">▶ Play</button>
       <button id="howto-btn" class="small-btn">How to play</button>
       <div id="howto">
@@ -42,6 +46,7 @@
 
   <!-- Main board -->
   <main id="board" class="hidden">
+    <div id="level-map" class="level-map"></div>
     <section id="monster-box" class="monster-box"></section>
     <section id="player-box" class="player-box"></section>
     <section id="hand" class="hand"></section>
@@ -50,6 +55,18 @@
     </div>
     <div id="log" class="log"></div>
   </main>
+
+  <!-- Shop screen (between levels) -->
+  <section id="shop-screen" class="overlay">
+    <div class="panel">
+      <h2>🛒 Trader's Nook</h2>
+      <p id="shop-note">A shady trader waits in the dark. Spend your gold before you go deeper.</p>
+      <p id="shop-gold" class="shop-gold"></p>
+      <div id="shop-offers" class="shop-offers"></div>
+      <div id="shop-remove" class="shop-remove"></div>
+      <button id="shop-done-btn" class="big-btn">Continue deeper ↓</button>
+    </div>
+  </section>
 
   <!-- Draft screen -->
   <section id="draft-screen" class="overlay">
@@ -73,6 +90,7 @@
   <!-- Win / lose screen -->
   <section id="end-screen" class="overlay">
     <div class="panel">
+      <canvas id="end-art" class="end-art" width="560" height="150"></canvas>
       <h2 id="end-title" class="end-title"></h2>
       <p id="end-text"></p>
       <p id="end-score"></p>
@@ -84,6 +102,7 @@
 
 <script src="js/cards.js"></script>
 <script src="js/monsters.js"></script>
+<script src="js/art.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
