@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dungeon Cards — a deck-builder card game</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <span class="hud-title">&#127984; Dungeon Cards</span>
+    <span id="hud-level" class="hud-item"></span>
+    <span id="hud-score" class="hud-item"></span>
+    <span id="hud-gold" class="hud-item"></span>
+    <span id="hud-deck" class="hud-item"></span>
+    <span id="hud-best" class="hud-item"></span>
+    <span class="hud-spacer"></span>
+    <button id="mute-btn" class="hud-btn">&#128266; Sound</button>
+    <button id="pause-btn" class="hud-btn">Pause</button>
+  </header>
+
+  <!-- Title screen -->
+  <section id="title-screen" class="overlay show">
+    <div class="panel title-panel">
+      <div class="title-icon">&#127984;</div>
+      <h1>Dungeon Cards</h1>
+      <p class="tagline">Delve 5 dungeon levels. Build your deck. Beat the Lich King.</p>
+      <button id="play-btn" class="big-btn">▶ Play</button>
+      <button id="howto-btn" class="small-btn">How to play</button>
+      <div id="howto">
+        <p><b>Goal:</b> defeat the monster on each of 5 levels. Beat the Lich King on level 5 to win.</p>
+        <p><b>Your turn:</b> you draw 5 cards and get 3 energy. Click a card (or press 1–9) to play it. Cards cost energy.</p>
+        <p><b>Cards:</b> &#128481;&#65039; Attack deals damage &nbsp;·&nbsp; &#128737;&#65039; Block absorbs damage until your next turn &nbsp;·&nbsp; &#128150; Heal restores HP &nbsp;·&nbsp; &#9760;&#65039; Poison ticks on the monster after it acts.</p>
+        <p><b>Monster:</b> after you press End Turn, the monster attacks. Its next attack is shown above it.</p>
+        <p><b>Between levels:</b> pick 1 of 3 new cards for your deck and rest to recover 10 HP.</p>
+        <p><b>Keys:</b> 1–9 play cards · Space ends turn · P pauses · M mutes.</p>
+      </div>
+      <p id="best-line" class="best-line">Best score: 0</p>
+    </div>
+  </section>
+
+  <!-- Main board -->
+  <main id="board" class="hidden">
+    <section id="monster-box" class="monster-box"></section>
+    <section id="player-box" class="player-box"></section>
+    <section id="hand" class="hand"></section>
+    <div id="controls">
+      <button id="end-turn-btn" class="big-btn end-turn">End Turn (Space)</button>
+    </div>
+    <div id="log" class="log"></div>
+  </main>
+
+  <!-- Draft screen -->
+  <section id="draft-screen" class="overlay">
+    <div class="panel">
+      <h2>&#127880; Choose a card</h2>
+      <p id="draft-note"></p>
+      <div id="draft-choices" class="draft-choices"></div>
+    </div>
+  </section>
+
+  <!-- Pause screen -->
+  <section id="pause-screen" class="overlay">
+    <div class="panel">
+      <h2>Paused</h2>
+      <p>Take a breath, delver. The dungeon waits.</p>
+      <button id="resume-btn" class="big-btn">Resume</button>
+      <button id="restart-btn" class="small-btn">Restart run</button>
+    </div>
+  </section>
+
+  <!-- Win / lose screen -->
+  <section id="end-screen" class="overlay">
+    <div class="panel">
+      <h2 id="end-title" class="end-title"></h2>
+      <p id="end-text"></p>
+      <p id="end-score"></p>
+      <button id="again-btn" class="big-btn">▶ Play again</button>
+      <button id="menu-btn" class="small-btn">Main menu</button>
+    </div>
+  </section>
+</div>
+
+<script src="js/cards.js"></script>
+<script src="js/monsters.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/boot.js"></script>
+</body>
+</html>
